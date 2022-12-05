@@ -1,0 +1,15 @@
+---
+Name: sentry-made-easy
+Only:
+  envvarset:
+    - 'SS_SENTRY_LOGGING_DSN'
+After:
+  - 'sentry-config'
+---
+
+PhpTek\Sentry\Handler\SentryHandler:
+  log_level: ERROR
+
+PhpTek\Sentry\Adaptor\SentryAdaptor:
+  opts:
+    dsn: '`SS_SENTRY_LOGGING_DSN`'

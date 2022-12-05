@@ -1,0 +1,34 @@
+{
+    "name": "sunnysideup/sentry-made-easy",
+    "type": "silverstripe-vendormodule",
+    "description": "Set up Sentry Error Logging on your Silverstripe website.",
+    "keywords": [
+        "Silverstripe-CMS",
+        "CMS",
+        "Silverstripe",
+        "Error",
+        "Bugs",
+        "Monitoring",
+        "log",
+        "Sentry",
+        "Sentry Error Logging"
+    ],
+    "require": {
+        "silverstripe/framework": "^4.0"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "license": "BSD-3-Clause",
+    "authors": [
+        {
+            "name": "Nicolaas Francken",
+            "email": "modules@sunnysideup.co.nz",
+            "role": "lead developer"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Sunnysideup\\SentryMadeEasy\\": "src/"
+        }
+    }
+}
