@@ -3,10 +3,10 @@ Name: sentry-made-easy
 Only:
   envvarset:
     - 'SENTRY_DSN'
+Except:
+  environment: 'dev' 
 After:
   - 'sentry-config'
-Except:
-  environment: 'dev'  
 ---
 
 PhpTek\Sentry\Handler\SentryHandler:
