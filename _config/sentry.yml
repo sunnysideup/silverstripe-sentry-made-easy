@@ -5,6 +5,8 @@ Only:
     - 'SENTRY_DSN'
 After:
   - 'sentry-config'
+Except:
+  environment: 'dev'  
 ---
 
 PhpTek\Sentry\Handler\SentryHandler:
@@ -14,18 +16,3 @@ PhpTek\Sentry\Adaptor\SentryAdaptor:
   opts:
     dsn: '`SENTRY_DSN`'
 
----
-Name: sentry-made-easy-unset
-Only:
-  envvarset:
-    - 'SENTRY_DSN'
-  environment:
-    - dev
-After:
-  - 'sentry-config'
----
-
-
-PhpTek\Sentry\Adaptor\SentryAdaptor:
-  opts:
-    dsn: null
