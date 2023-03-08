@@ -2,7 +2,7 @@
 Name: sentry-made-easy-using-SS_SENTRY_DSN
 Only:
   envvarset:
-    - 'SS_SENTRY_DSN'
+    - 'SS_SENTRY_DNS'
 Except:
   environment: 'dev'
 After:
@@ -14,23 +14,7 @@ PhpTek\Sentry\Handler\SentryHandler:
 
 PhpTek\Sentry\Adaptor\SentryAdaptor:
   opts:
-    dsn: '`SS_SENTRY_DSN`'
+    dsn: '`SS_SENTRY_DNS`'
 
----
-Name: sentry-made-easy-using-SENTRY_DNS
-Only:
-  envvarset:
-    - 'SENTRY_DSN'
-Except:
-  environment: 'dev'
-After:
-  - 'sentry-config'
----
 
-PhpTek\Sentry\Handler\SentryHandler:
-  log_level: ERROR
-
-PhpTek\Sentry\Adaptor\SentryAdaptor:
-  opts:
-    dsn: '`SENTRY_DSN`'
 
