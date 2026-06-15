@@ -15,7 +15,7 @@
   ],
   "require": {
     "silverstripe/framework": "^6.0",
-    "phptek/sentry": "^6.0"
+    "phptek/sentry": "*"
   },
   "minimum-stability": "dev",
   "prefer-stable": true,
