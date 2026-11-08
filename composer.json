@@ -14,8 +14,9 @@
     "Sentry Error Logging"
   ],
   "require": {
+    "php": "^8.4",
     "silverstripe/framework": "^6.0",
-    "phptek/sentry": "*"
+    "sentry/sentry": "^4"
   },
   "minimum-stability": "dev",
   "prefer-stable": true,
@@ -30,6 +31,12 @@
   "autoload": {
     "psr-4": {
       "Sunnysideup\\SentryMadeEasy\\": "src/"
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "composer/installers": true,
+      "silverstripe/vendor-plugin": true
     }
   }
 }

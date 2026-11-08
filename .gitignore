@@ -11,3 +11,6 @@ coverage/
 /**/*.js.map
 /vendor/
 /resources/
+
+composer.lock
+public/
