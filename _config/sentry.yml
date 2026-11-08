@@ -2,19 +2,17 @@
 Name: sentry-made-easy-using-SS_SENTRY_DSN
 Only:
   envvarset:
-    - 'SS_SENTRY_DNS'
+    - 'SS_SENTRY_DSN'
 Except:
   environment: 'dev'
 After:
-  - 'sentry-config'
+  - logging
 ---
-
-PhpTek\Sentry\Handler\SentryHandler:
-  log_level: ERROR
-
-PhpTek\Sentry\Adaptor\SentryAdaptor:
-  opts:
-    dsn: '`SS_SENTRY_DNS`'
-
-
-
+SilverStripe\Core\Injector\Injector:
+  Sentry\SentryHandler:
+    constructor:
+      level: error
+      bubble: true
+  Psr\Log\LoggerInterface:
+    calls:
+      pushSentryHandler: [ pushHandler, [ '%$Sunnysideup\SentryMadeEasy\SentryHandler' ] ]
