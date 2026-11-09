@@ -1,44 +1,26 @@
-# tl;dr
+# SilverStripe Error Tracking on Sentry
 
-## PHP Error tracking
+## Getting Started
 
-1. Add your site to sentry.io
+1. Create a new Sentry project
 
-2. Set the following variable in you `.env` file and you are done! The URL is provided by sentry.io (the one here is bogus).
+2. Set the DSN to the `SS_SENTRY_DSN` variable in the `.env` file
+
+   ```env
+   SS_SENTRY_DSN="https://your-key@your-host.ingest.sentry.io/your-project-id"
+   ```
+
+## Customisation
+
+- `SS_ENVIRONMENT_TYPE` sets the environment type (also used by SilverStripe)
+- `SS_SENTRY_ENVIRONMENT` overrides `SS_ENVIRONMENT_TYPE`, can be used to provide more granular environment type e.g. `production` or `staging`
+- `SS_SENTRY_RELEASE` sets the release tag
+
+## Examples
 
 ```env
-SS_SENTRY_DNS="https://2348992804e92837489u@234234234234234234.ingest.sentry.io/234234234234"
-```
-
-## Frontend Sentry Integration
-
-For now, add with a script tag at the top of the page as instructed when setting up a javascript Sentry project.
-
-During creation, Sentry will provide a Loader Script. Include this in the `<head>` of your `Page.ss` template.
-
-- Consider getting link from .env and using `TemplateGlobalProvider` to get link
-- Lighthouse speed
-- Load Async
-- Consider loading for only a subset of visits as per below:
-
-```php
-class PageController extends ContentController
-{
-
-    public function FrontEndSentryCode()
-    {
-        if(rand(0,9999) === 1) {
-            $link = Enviroment::getEnv('SS_SENTRY_DNS_FRONT_END');
-            return '
-                <script src="'.$link.'" crossorigin="anonymous"></script>
-            ';
-        }
-    }
-}
-```
-
-in your `Page.ss` template:
-
-```ss
-$FrontEndSentryCode
+SS_SENTRY_DSN="https://your-key@your-host.ingest.sentry.io/your-project-id"
+SS_SENTRY_ENVIRONMENT="production"
+SS_SENTRY_RELEASE="1.0.0"
+SS_ENVIRONMENT_TYPE="live"
 ```
