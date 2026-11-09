@@ -42,17 +42,10 @@ class SentryHandler extends AbstractProcessingHandler
     public function __construct(
         int|string|Level $level = Level::Error,
         bool $bubble = true,
-        array $options = [],
-        ?HubInterface $hub = null,
-        ?array $attachers = null
+        array $options = []
     ) {
         parent::__construct($level, $bubble);
-        $this->attachers = $attachers ?? static::getDefaultAttachers();
-
-        if ($hub !== null) {
-            $this->hub = $hub;
-            return;
-        }
+        $this->attachers = static::getDefaultAttachers();
 
         $options += [
             'dsn' => Environment::getEnv('SS_SENTRY_DSN') ?: null,
