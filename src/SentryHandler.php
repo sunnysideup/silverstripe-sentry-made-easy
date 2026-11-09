@@ -18,6 +18,7 @@ use SilverStripe\Core\Environment;
 use Sunnysideup\SentryMadeEasy\Attachers\Attacher;
 use Sunnysideup\SentryMadeEasy\Attachers\CurrentUserAttacher;
 use Sunnysideup\SentryMadeEasy\Attachers\RequestAttacher;
+use Sunnysideup\SentryMadeEasy\Attachers\ServerInfoAttacher;
 use Throwable;
 
 /**
@@ -30,14 +31,16 @@ class SentryHandler extends AbstractProcessingHandler
     /** @var list<Attacher> */
     private array $attachers;
 
+    /**
+     * @return list<Attacher>
+     */
     protected static function getDefaultAttachers(): array
     {
-        return [new RequestAttacher(), new CurrentUserAttacher()];
+        return [new RequestAttacher(), new CurrentUserAttacher(), new ServerInfoAttacher()];
     }
 
     /**
      * @param array<string, mixed> $options Sentry client options, overriding environment defaults.
-     * @param list<Attacher>|null $attachers Defaults to request and current-user attachers.
      */
     public function __construct(
         int|string|Level $level = Level::Error,
@@ -66,16 +69,14 @@ class SentryHandler extends AbstractProcessingHandler
         $event->setLogger('monolog.' . $record->channel);
         $event->setTimestamp((float) $record->datetime->format('U.u'));
 
-        $event->setLevel(match ($record->level) {
-            Level::Debug => Severity::debug(),
-            Level::Info, Level::Notice => Severity::info(),
-            Level::Warning => Severity::warning(),
-            Level::Error => Severity::error(),
-            Level::Critical, Level::Alert, Level::Emergency => Severity::fatal(),
-        });
+        $event->setLevel(static::mapLogLevelToSeverity($record->level));
 
         foreach ($this->attachers as $attacher) {
-            $attacher->attach($event);
+            try {
+                $attacher->attach($event);
+            } catch (Throwable) {
+                // swallow exception as we can't do anything here
+            }
         }
 
         $context = $record->context;
@@ -100,5 +101,16 @@ class SentryHandler extends AbstractProcessingHandler
 
             $this->hub->captureEvent($event, $hint);
         });
+    }
+
+    protected static function mapLogLevelToSeverity(Level $level): Severity
+    {
+        return match ($level) {
+            Level::Debug => Severity::debug(),
+            Level::Info, Level::Notice => Severity::info(),
+            Level::Warning => Severity::warning(),
+            Level::Error => Severity::error(),
+            Level::Critical, Level::Alert, Level::Emergency => Severity::fatal(),
+        };
     }
 }
