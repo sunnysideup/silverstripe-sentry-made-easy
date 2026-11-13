@@ -9,32 +9,33 @@ use Sentry\Event;
 
 /**
  * Attaches server information (PHP version, SilverStripe version and Sentry
- * SDK version) to the event as a "server" context.
+ * SDK version) to the event as tags.
  */
 class ServerInfoAttacher implements Attacher
 {
     /**
-     * Context key mapped to the composer package whose version should be reported.
+     * Tag key mapped to the composer package whose version should be reported.
      *
      * @var array<string, string>
      */
     private const PACKAGES = [
-        'silverstripe_version' => 'silverstripe/framework',
-        'sentry_version' => 'sentry/sentry',
+        'silverstripe' => 'silverstripe/framework',
+        'sentry' => 'sentry/sentry',
     ];
 
     public function attach(Event $event): void
     {
-        $context = [
-            'php_version' => PHP_VERSION,
-        ];
+        $event->setTag('php.version', PHP_VERSION);
+        $event->setTag('php.sapi', PHP_SAPI);
 
-        foreach (self::PACKAGES as $contextKey => $package) {
+        foreach (self::PACKAGES as $tagKey => $package) {
             if (InstalledVersions::isInstalled($package)) {
-                $context[$contextKey] = InstalledVersions::getPrettyVersion($package);
+                $version = InstalledVersions::getPrettyVersion($package);
+
+                if ($version !== null) {
+                    $event->setTag("{$tagKey}.version", $version);
+                }
             }
         }
-
-        $event->setContext('server', $context);
     }
 }
