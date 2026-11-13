@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Sunnysideup\SentryMadeEasy\Attachers;
 
+use Psr\Http\Message\ServerRequestInterface;
 use Sentry\Event;
 use Sentry\Integration\RequestFetcher;
+use Sunnysideup\SentryMadeEasy\Api\SentryConfig;
 
 class RequestAttacher implements Attacher
 {
@@ -37,12 +39,33 @@ class RequestAttacher implements Attacher
             }
 
             $uri = $request->getUri();
-            $event->setRequest([
+            $requestData = $event->getRequest() + [
                 'url' => (string) $uri->withQuery('')->withFragment(''),
                 'method' => $request->getMethod(),
                 'query_string' => $uri->getQuery(),
                 'headers' => $headers,
-            ]);
+            ];
+
+            $event->setRequest($this->attachRequestData($request, $requestData));
         }
+    }
+
+    protected function attachRequestData(ServerRequestInterface $request, array $requestData): array
+    {
+        if (SentryConfig::shouldExcludeSensitiveData()) {
+            unset($requestData['data']);
+
+            return $requestData;
+        }
+
+        if (!array_key_exists('data', $requestData)) {
+            $body = $request->getParsedBody() ?? (string) $request->getBody();
+
+            if ($body !== '' && $body !== []) {
+                $requestData['data'] = $body;
+            }
+        }
+
+        return $requestData;
     }
 }

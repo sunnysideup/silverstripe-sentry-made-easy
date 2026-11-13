@@ -7,12 +7,19 @@ Except:
   environment: 'dev'
 After:
   - logging
+  - cli-config
 ---
 SilverStripe\Core\Injector\Injector:
-  Sentry\SentryHandler:
+  Sunnysideup\SentryMadeEasy\SentryHandler:
     constructor:
       level: error
       bubble: true
   Psr\Log\LoggerInterface:
     calls:
       pushSentryHandler: [ pushHandler, [ '%$Sunnysideup\SentryMadeEasy\SentryHandler' ] ]
+  Sunnysideup\SentryMadeEasy\Logging\ConsoleErrorListener:
+    constructor:
+      logger: '%$Psr\Log\LoggerInterface'
+  Symfony\Contracts\EventDispatcher\EventDispatcherInterface.sake:
+    calls:
+      logSentryConsoleErrors: [ addListener, [ 'console.error', [ '%$Sunnysideup\SentryMadeEasy\Logging\ConsoleErrorListener', '__invoke' ] ] ]

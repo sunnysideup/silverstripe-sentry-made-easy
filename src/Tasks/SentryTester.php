@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 namespace Sunnysideup\SentryMadeEasy\Tasks;
 
-use Monolog\Logger;
-use Psr\Log\LoggerInterface;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\Director;
 use SilverStripe\Core\Convert;
-use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\BuildTask;
 use SilverStripe\PolyExecution\PolyOutput;
 use Sunnysideup\SentryMadeEasy\Api\ErrorMethods;
-use Sunnysideup\SentryMadeEasy\SentryHandler;
+use Sunnysideup\SentryMadeEasy\Api\SentryConfig;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -37,23 +34,12 @@ class SentryTester extends BuildTask
     {
         $output->writeForHtml('<title>' . Convert::raw2xml($this->getTitle()) . '</title>');
 
-        $logger = Injector::inst()->get(LoggerInterface::class);
-        $registered = false;
-
-        if ($logger instanceof Logger) {
-            foreach ($logger->getHandlers() as $handler) {
-                if ($handler instanceof SentryHandler) {
-                    $registered = true;
-                    break;
-                }
-            }
-        }
-
-        $output->writeln(
-            $registered
-                ? 'SentryHandler is registered.'
-                : 'SentryHandler is NOT registered.'
-        );
+        $output->writeln([
+            'Sentry handler: ' . (SentryConfig::isRegistered() ? 'registered' : 'UNREGISTERED'),
+            'Environment: ' . SentryConfig::getSentryEnvironment(),
+            'Release tag: ' . (SentryConfig::getSentryRelease() ?? '(not set)'),
+            'Sensitive data: ' . (SentryConfig::shouldExcludeSensitiveData() ? 'excluded' : 'INCLUDED'),
+        ]);
         $output->writeForHtml('<hr>');
         $output->writeForAnsi('', true);
 
@@ -75,10 +61,10 @@ class SentryTester extends BuildTask
 
         $output->writeln('Choose a test below. Each test intentionally triggers an error for Sentry reporting.');
         $output->writeForHtml('<ul>');
+        $taskUrl = Controller::join_links(Director::baseURL(), 'dev/tasks', static::getNameWithoutNamespace());
 
         foreach ($methods as $method) {
-            $url = Controller::join_links(Director::baseURL(), 'dev/tasks', static::getNameWithoutNamespace())
-                . '?method=' . rawurlencode($method);
+            $url = $taskUrl . '?method=' . rawurlencode($method);
             $output->writeForHtml(sprintf(
                 '<li><a href="%s" target="_blank" rel="noopener noreferrer">%s</a></li>',
                 Convert::raw2att($url),
@@ -87,7 +73,17 @@ class SentryTester extends BuildTask
             $output->writeForAnsi(sprintf('  %s: sake %s --method=%s', $method, static::getName(), $method), true);
         }
 
-        $output->writeForHtml('</ul>');
+        $output->writeForHtml('</ul><hr>');
+        $output->writeForHtml(sprintf(
+            '<h2>POST exception test</h2>'
+            . '<form action="%s" method="post" target="_blank" rel="noopener noreferrer">'
+            . '<input type="hidden" name="test_hidden" value="yes!">'
+            . '<input type="hidden" name="method" value="exception">'
+            . '<label style="display:block;margin-bottom:.5em">Test body<br><textarea name="test_body" rows="5" cols="30">Sentry POST request body test</textarea></label>'
+            . '<button type="submit">Trigger exception via POST</button>'
+            . '</form>',
+            Convert::raw2att($taskUrl)
+        ));
 
         return Command::SUCCESS;
     }

@@ -14,7 +14,8 @@ use Sentry\Severity;
 use Sentry\State\Hub;
 use Sentry\State\HubInterface;
 use Sentry\State\Scope;
-use SilverStripe\Core\Environment;
+use SilverStripe\ORM\Connect\DatabaseException;
+use Sunnysideup\SentryMadeEasy\Api\SentryConfig;
 use Sunnysideup\SentryMadeEasy\Attachers\Attacher;
 use Sunnysideup\SentryMadeEasy\Attachers\CurrentUserAttacher;
 use Sunnysideup\SentryMadeEasy\Attachers\RequestAttacher;
@@ -51,10 +52,9 @@ class SentryHandler extends AbstractProcessingHandler
         $this->attachers = static::getDefaultAttachers();
 
         $options += [
-            'dsn' => Environment::getEnv('SS_SENTRY_DSN') ?: null,
-            'environment' => Environment::getEnv('SS_SENTRY_ENVIRONMENT')
-                ?: (Environment::getEnv('SS_ENVIRONMENT_TYPE') ?: 'dev'),
-            'release' => Environment::getEnv('SS_SENTRY_RELEASE') ?: null,
+            'dsn' => SentryConfig::getSentryDSN(),
+            'environment' => SentryConfig::getSentryEnvironment(),
+            'release' => SentryConfig::getSentryRelease(),
             // SilverStripe already registers PHP error and exception handlers.
             'default_integrations' => false,
         ];
@@ -82,10 +82,8 @@ class SentryHandler extends AbstractProcessingHandler
         $context = $record->context;
         $hint = new EventHint();
 
-        if (($context['exception'] ?? null) instanceof Throwable) {
-            $hint->exception = $context['exception'];
-            unset($context['exception']);
-        }
+        $this->attachTags($event, $hint, $context);
+        $this->attachException($event, $hint, $context);
 
         $this->hub->withScope(function (Scope $scope) use ($record, $context, $event, $hint): void {
             $scope->setExtra('monolog.channel', $record->channel);
@@ -101,6 +99,44 @@ class SentryHandler extends AbstractProcessingHandler
 
             $this->hub->captureEvent($event, $hint);
         });
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    protected function attachTags(Event $event, EventHint $hint, array &$context): void
+    {
+        if (is_array($context['tags'] ?? null)) {
+            foreach ($context['tags'] as $tag => $value) {
+                if (is_string($tag) && is_string($value)) {
+                    $event->setTag($tag, $value);
+                }
+            }
+            unset($context['tags']);
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $context
+     */
+    protected function attachException(Event $event, EventHint $hint, array &$context): void
+    {
+        if (!isset($context['exception'])) {
+            return;
+        }
+
+        if ($context['exception'] instanceof Throwable) {
+            $hint->exception = $context['exception'];
+
+            if ($hint->exception instanceof DatabaseException && !SentryConfig::shouldExcludeSensitiveData()) {
+                $event->setContext('database', [
+                    'sql' => $hint->exception->getSQL(),
+                    'parameters' => $hint->exception->getParameters(),
+                ]);
+            }
+
+            unset($context['exception']);
+        }
     }
 
     protected static function mapLogLevelToSeverity(Level $level): Severity

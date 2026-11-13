@@ -14,8 +14,11 @@ class CurrentUserAttacher implements Attacher
     {
         $member = Security::getCurrentUser();
 
-        if ($member !== null && $member->Email) {
-            $event->setUser(new UserDataBag(email: (string) $member->Email));
+        if ($member !== null && $member->ID) {
+            $event->setUser(new UserDataBag(
+                id: $member->ID,
+                email: (string) $member->Email
+            ));
         }
     }
 }
