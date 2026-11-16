@@ -6,6 +6,7 @@ namespace Sunnysideup\SentryMadeEasy\Attachers;
 
 use Psr\Http\Message\ServerRequestInterface;
 use Sentry\Event;
+use Sentry\EventHint;
 use Sentry\Integration\RequestFetcher;
 use Sunnysideup\SentryMadeEasy\Api\SentryConfig;
 
@@ -26,7 +27,7 @@ class RequestAttacher implements Attacher
         'User-Agent',
     ];
 
-    public function attach(Event $event): void
+    public function attach(Event $event, EventHint $eventHint): void
     {
         $request = (new RequestFetcher())->fetchRequest();
 
@@ -48,6 +49,11 @@ class RequestAttacher implements Attacher
 
             $event->setRequest($this->attachRequestData($request, $requestData));
         }
+    }
+
+    public function attachWithContext(Event $event, EventHint $eventHint, array &$context): void
+    {
+        // nothing to do
     }
 
     protected function attachRequestData(ServerRequestInterface $request, array $requestData): array

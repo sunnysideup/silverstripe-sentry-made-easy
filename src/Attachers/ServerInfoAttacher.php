@@ -6,6 +6,7 @@ namespace Sunnysideup\SentryMadeEasy\Attachers;
 
 use Composer\InstalledVersions;
 use Sentry\Event;
+use Sentry\EventHint;
 
 /**
  * Attaches server information (PHP version, SilverStripe version and Sentry
@@ -23,7 +24,7 @@ class ServerInfoAttacher implements Attacher
         'sentry' => 'sentry/sentry',
     ];
 
-    public function attach(Event $event): void
+    public function attach(Event $event, EventHint $eventHint): void
     {
         $event->setTag('php.version', PHP_VERSION);
         $event->setTag('php.sapi', PHP_SAPI);
@@ -37,5 +38,10 @@ class ServerInfoAttacher implements Attacher
                 }
             }
         }
+    }
+
+    public function attachWithContext(Event $event, EventHint $eventHint, array &$context): void
+    {
+        // nothing to do
     }
 }

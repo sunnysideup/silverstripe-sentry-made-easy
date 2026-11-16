@@ -35,6 +35,7 @@ class SentryTester extends BuildTask
         $output->writeForHtml('<title>' . Convert::raw2xml($this->getTitle()) . '</title>');
 
         $output->writeln([
+            'Sentry DSN: ' . (SentryConfig::getSentryDSN() ?? '(missing or invalid)'),
             'Sentry handler: ' . (SentryConfig::isRegistered() ? 'registered' : 'UNREGISTERED'),
             'Environment: ' . SentryConfig::getSentryEnvironment(),
             'Release tag: ' . (SentryConfig::getSentryRelease() ?? '(not set)'),

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sunnysideup\SentryMadeEasy;
 
+use InvalidArgumentException;
 use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Level;
 use Monolog\LogRecord;
@@ -14,12 +15,13 @@ use Sentry\Severity;
 use Sentry\State\Hub;
 use Sentry\State\HubInterface;
 use Sentry\State\Scope;
-use SilverStripe\ORM\Connect\DatabaseException;
 use Sunnysideup\SentryMadeEasy\Api\SentryConfig;
 use Sunnysideup\SentryMadeEasy\Attachers\Attacher;
 use Sunnysideup\SentryMadeEasy\Attachers\CurrentUserAttacher;
+use Sunnysideup\SentryMadeEasy\Attachers\ExceptionAttacher;
 use Sunnysideup\SentryMadeEasy\Attachers\RequestAttacher;
 use Sunnysideup\SentryMadeEasy\Attachers\ServerInfoAttacher;
+use Sunnysideup\SentryMadeEasy\Attachers\TagAttacher;
 use Throwable;
 
 /**
@@ -27,7 +29,7 @@ use Throwable;
  */
 class SentryHandler extends AbstractProcessingHandler
 {
-    private HubInterface $hub;
+    private ?HubInterface $hub = null;
 
     /** @var list<Attacher> */
     private array $attachers;
@@ -37,7 +39,14 @@ class SentryHandler extends AbstractProcessingHandler
      */
     protected static function getDefaultAttachers(): array
     {
-        return [new RequestAttacher(), new CurrentUserAttacher(), new ServerInfoAttacher()];
+        return [
+            new RequestAttacher(),
+            new CurrentUserAttacher(),
+            new ServerInfoAttacher(),
+            // do not change the order of these attachers
+            new TagAttacher(),
+            new ExceptionAttacher(),
+        ];
     }
 
     /**
@@ -51,39 +60,55 @@ class SentryHandler extends AbstractProcessingHandler
         parent::__construct($level, $bubble);
         $this->attachers = static::getDefaultAttachers();
 
+        $sentryDsn = SentryConfig::getSentryDSN();
+        if ($sentryDsn === null) {
+            return;
+        }
+
         $options += [
-            'dsn' => SentryConfig::getSentryDSN(),
+            'dsn' => $sentryDsn,
             'environment' => SentryConfig::getSentryEnvironment(),
             'release' => SentryConfig::getSentryRelease(),
             // SilverStripe already registers PHP error and exception handlers.
             'default_integrations' => false,
         ];
 
-        $this->hub = new Hub(ClientBuilder::create($options)->getClient());
+        try {
+            $client = ClientBuilder::create($options)->getClient();
+            // extra checks for dsn
+            if ($client->getOptions()->getDsn() === null) {
+                return;
+            }
+
+            $this->hub = new Hub($client);
+        } catch (InvalidArgumentException) {
+            // swallow exceptions as we don't want to interrupt the site because of invalid configuration
+        }
     }
 
     protected function write(LogRecord $record): void
     {
+        if ($this->hub === null) {
+            return;
+        }
+
         $event = Event::createEvent();
         $event->setMessage($record->message);
         $event->setLogger('monolog.' . $record->channel);
         $event->setTimestamp((float) $record->datetime->format('U.u'));
-
         $event->setLevel(static::mapLogLevelToSeverity($record->level));
+
+        $hint = new EventHint();
+        $context = $record->context;
 
         foreach ($this->attachers as $attacher) {
             try {
-                $attacher->attach($event);
+                $attacher->attach($event, $hint);
+                $attacher->attachWithContext($event, $hint, $context);
             } catch (Throwable) {
                 // swallow exception as we can't do anything here
             }
         }
-
-        $context = $record->context;
-        $hint = new EventHint();
-
-        $this->attachTags($event, $hint, $context);
-        $this->attachException($event, $hint, $context);
 
         $this->hub->withScope(function (Scope $scope) use ($record, $context, $event, $hint): void {
             $scope->setExtra('monolog.channel', $record->channel);
@@ -99,44 +124,6 @@ class SentryHandler extends AbstractProcessingHandler
 
             $this->hub->captureEvent($event, $hint);
         });
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    protected function attachTags(Event $event, EventHint $hint, array &$context): void
-    {
-        if (is_array($context['tags'] ?? null)) {
-            foreach ($context['tags'] as $tag => $value) {
-                if (is_string($tag) && is_string($value)) {
-                    $event->setTag($tag, $value);
-                }
-            }
-            unset($context['tags']);
-        }
-    }
-
-    /**
-     * @param array<string, mixed> $context
-     */
-    protected function attachException(Event $event, EventHint $hint, array &$context): void
-    {
-        if (!isset($context['exception'])) {
-            return;
-        }
-
-        if ($context['exception'] instanceof Throwable) {
-            $hint->exception = $context['exception'];
-
-            if ($hint->exception instanceof DatabaseException && !SentryConfig::shouldExcludeSensitiveData()) {
-                $event->setContext('database', [
-                    'sql' => $hint->exception->getSQL(),
-                    'parameters' => $hint->exception->getParameters(),
-                ]);
-            }
-
-            unset($context['exception']);
-        }
     }
 
     protected static function mapLogLevelToSeverity(Level $level): Severity
