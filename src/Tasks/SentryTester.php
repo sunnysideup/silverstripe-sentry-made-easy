@@ -35,11 +35,12 @@ class SentryTester extends BuildTask
         $output->writeForHtml('<title>' . Convert::raw2xml($this->getTitle()) . '</title>');
 
         $output->writeln([
-            'Sentry DSN: ' . (SentryConfig::getSentryDSN() ?? '(missing or invalid)'),
+            'Sentry DSN: ' . (SentryConfig::getSentryDSN() !== null ? 'configured' : '(missing or invalid)'),
             'Sentry handler: ' . (SentryConfig::isRegistered() ? 'registered' : 'UNREGISTERED'),
             'Environment: ' . SentryConfig::getSentryEnvironment(),
             'Release tag: ' . (SentryConfig::getSentryRelease() ?? '(not set)'),
             'Sensitive data: ' . (SentryConfig::shouldExcludeSensitiveData() ? 'excluded' : 'INCLUDED'),
+            'Tip: Run flush=all in both CLI and browser to see the latest information.',
         ]);
         $output->writeForHtml('<hr>');
         $output->writeForAnsi('', true);

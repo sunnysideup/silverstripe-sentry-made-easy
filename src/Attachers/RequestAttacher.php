@@ -40,6 +40,11 @@ class RequestAttacher implements Attacher
             }
 
             $uri = $request->getUri();
+            // little clean-up to avoid urls like https://example.com:80
+            if ($uri->getScheme() === 'https' && $uri->getPort() === 80) {
+                $uri = $uri->withPort(null);
+            }
+
             $requestData = $event->getRequest() + [
                 'url' => (string) $uri->withQuery('')->withFragment(''),
                 'method' => $request->getMethod(),
