@@ -7,6 +7,7 @@ namespace Sunnysideup\SentryMadeEasy\Attachers;
 use Composer\InstalledVersions;
 use Sentry\Event;
 use Sentry\EventHint;
+use SilverStripe\Core\Environment;
 
 /**
  * Attaches server information (PHP version, SilverStripe version and Sentry
@@ -29,6 +30,8 @@ class ServerInfoAttacher implements Attacher
         $event->setTag('php.version', PHP_VERSION);
         $event->setTag('php.sapi', PHP_SAPI);
 
+        $this->attachSilverStripeInfo($event);
+
         foreach (self::PACKAGES as $tagKey => $package) {
             if (InstalledVersions::isInstalled($package)) {
                 $version = InstalledVersions::getPrettyVersion($package);
@@ -43,5 +46,18 @@ class ServerInfoAttacher implements Attacher
     public function attachWithContext(Event $event, EventHint $eventHint, array &$context): void
     {
         // nothing to do
+    }
+
+    protected function attachSilverStripeInfo(Event $event): void
+    {
+        $baseUrl = (string) Environment::getEnv('SS_BASE_URL');
+        if ($baseUrl !== '') {
+            $event->setTag('silverstripe.base_url', $baseUrl);
+        }
+
+        $environmentType = (string) Environment::getEnv('SS_ENVIRONMENT_TYPE');
+        if ($environmentType !== '') {
+            $event->setTag('silverstripe.environment_type', $environmentType);
+        }
     }
 }
