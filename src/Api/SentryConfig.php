@@ -49,8 +49,17 @@ class SentryConfig
 
     public static function getSentryEnvironment(): string
     {
-        return Environment::getEnv('SS_SENTRY_ENVIRONMENT')
-            ?: (Environment::getEnv('SS_ENVIRONMENT_TYPE') ?: 'dev');
+        $environment = Environment::getEnv('SS_SENTRY_ENVIRONMENT');
+        if ($environment) {
+            return $environment;
+        }
+
+        $environment = Environment::getEnv('SS_ENVIRONMENT_TYPE') ?: 'dev';
+        if ($environment === 'test') {
+            return SentryEnvironmentDetector::detect() ?? 'test';
+        }
+
+        return $environment;
     }
 
     public static function getSentryRelease(): ?string
