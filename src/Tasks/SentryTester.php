@@ -74,7 +74,7 @@ class SentryTester extends BuildTask
             'Sentry handler: ' . (SentryConfig::isRegistered() ? 'registered' : 'UNREGISTERED'),
             'Environment: ' . SentryConfig::getSentryEnvironment(),
             'Release tag: ' . (SentryConfig::getSentryRelease() ?? '(not set)'),
-            'Sensitive data: ' . (SentryConfig::shouldExcludeSensitiveData() ? 'excluded' : 'INCLUDED'),
+            'Sensitive data: ' . (SentryConfig::canIncludeSensitiveData() ? 'INCLUDED' : 'excluded'),
             'Tip: Run flush=all in both CLI and browser to see the latest information.',
         ]);
         $output->writeForHtml('</details>');

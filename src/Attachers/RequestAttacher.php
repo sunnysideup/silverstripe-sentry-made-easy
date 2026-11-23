@@ -63,15 +63,13 @@ class RequestAttacher implements Attacher
 
     protected function attachRequestData(ServerRequestInterface $request, array $requestData): array
     {
-        if (SentryConfig::shouldExcludeSensitiveData()) {
+        if (!SentryConfig::canIncludeSensitiveData()) {
             unset($requestData['data']);
-
             return $requestData;
         }
 
         if (!array_key_exists('data', $requestData)) {
             $body = $request->getParsedBody() ?? (string) $request->getBody();
-
             if ($body !== '' && $body !== []) {
                 $requestData['data'] = $body;
             }

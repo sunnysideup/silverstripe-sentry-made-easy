@@ -21,7 +21,7 @@ class DatabaseContextProvider implements ContextProvider
             return [];
         }
 
-        if (SentryConfig::shouldExcludeSensitiveData()) {
+        if (!SentryConfig::canIncludeSensitiveData()) {
             return [];
         }
 

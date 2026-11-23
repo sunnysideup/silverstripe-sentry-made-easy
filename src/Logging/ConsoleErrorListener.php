@@ -35,7 +35,7 @@ class ConsoleErrorListener
 
     protected function getSanitisedCommand(InputInterface $input): ?string
     {
-        if (!SentryConfig::shouldExcludeSensitiveData()) {
+        if (SentryConfig::canIncludeSensitiveData()) {
             return (string) $input;
         }
 

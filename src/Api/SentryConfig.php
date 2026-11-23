@@ -67,8 +67,8 @@ class SentryConfig
         return Environment::getEnv('SS_SENTRY_RELEASE') ?: null;
     }
 
-    public static function shouldExcludeSensitiveData(): bool
+    public static function canIncludeSensitiveData(): bool
     {
-        return filter_var(Environment::getEnv('SS_SENTRY_EXCLUDE_SENSITIVE_DATA'), FILTER_VALIDATE_BOOLEAN);
+        return filter_var(Environment::getEnv('SS_SENTRY_INCLUDE_SENSITIVE_DATA'), FILTER_VALIDATE_BOOLEAN);
     }
 }
