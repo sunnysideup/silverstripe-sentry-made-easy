@@ -19,6 +19,7 @@ use Sunnysideup\SentryMadeEasy\Api\SentryConfig;
 use Sunnysideup\SentryMadeEasy\Attachers\Attacher;
 use Sunnysideup\SentryMadeEasy\Attachers\CurrentUserAttacher;
 use Sunnysideup\SentryMadeEasy\Attachers\ExceptionAttacher;
+use Sunnysideup\SentryMadeEasy\Attachers\GitInfoAttacher;
 use Sunnysideup\SentryMadeEasy\Attachers\RequestAttacher;
 use Sunnysideup\SentryMadeEasy\Attachers\ServerInfoAttacher;
 use Sunnysideup\SentryMadeEasy\Attachers\TagAttacher;
@@ -43,6 +44,7 @@ class SentryHandler extends AbstractProcessingHandler
             new RequestAttacher(),
             new CurrentUserAttacher(),
             new ServerInfoAttacher(),
+            new GitInfoAttacher(),
             // do not change the order of these attachers
             new TagAttacher(),
             new ExceptionAttacher(),
